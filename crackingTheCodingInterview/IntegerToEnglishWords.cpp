@@ -16,7 +16,6 @@ public:
             return "Zero";
         }
         int loopNumber = num;
-        int largeNumberCounter = 0;
         int numberLength = 0;
 
         do
@@ -26,14 +25,9 @@ public:
             string* arrayToUse;
             int numberIndex = loopNumber % 10;
             
-            if(numberLength % 3 == 1 && loopNumber < num )
-            {
-                //print thousand (only if there is a one, ten, or hundred other than 0 in the next 3 digits)
-                if((loopNumber) % 1000 != 0)
-                {
-                    result = " " + largeNumbers[largeNumberCounter] + result;
-                }
-                largeNumberCounter++;
+            if(numberLength % 3 == 1 && loopNumber < num && (loopNumber) % 1000 != 0 )
+            {   //print thousand (only if there is a one, ten, or hundred other than 0 in the next 3 digits)
+                result = " " + largeNumbers[(numberLength/3)-1] + result;
             }
 
             arrayToUse = determineArrayToUse(numberLength, loopNumber);
