@@ -1,52 +1,41 @@
+//https://leetcode.com/problems/lru-cache/submissions/
 class LRUCache {
 public:
-    unordered_map<int, int> entries;
-    vector<int> cacheQueue;
-    int capacity = 0;
-    LRUCache(int cap) {
-        capacity = cap;
-        //preallocate vector with capacity+1
-        cacheQueue.reserve(cap+1);
-    }
+    LRUCache(int capacity) : _capacity(capacity) {}
     
     int get(int key) {
-
-        if(entries.find(key) != entries.end())
-        {
-            auto index = find(cacheQueue.begin(), cacheQueue.end(), key);
-            cacheQueue.erase(index);
-            cacheQueue.emplace_back(key);
-
-            return entries[key];
-        }
-
-        return -1;
+        auto it = cache.find(key);
+        if (it == cache.end()) return -1;
+        touch(it);
+        return it->second.first;
     }
     
-    void put(int key, int value) 
-    {
-        //if you're replacing a number, erase it
-        //and then put it at the back.
-
-        //if it's a new number, add it and see if
-        //you need to remove a number
-        if(entries[key])
-        {
-            //move to back of queue
-            auto index = find(cacheQueue.begin(), cacheQueue.end(), key);
-            cacheQueue.erase(index);
-            cacheQueue.emplace_back(key);
+    void put(int key, int value) {
+        auto it = cache.find(key);
+        if (it != cache.end()) touch(it);
+        else {
+			if (cache.size() == _capacity) {
+				cache.erase(used.back());
+				used.pop_back();
+			}
+            used.push_front(key);
         }
-        else
-        {
-            cacheQueue.emplace_back(key);
-            if(cacheQueue.size() > capacity)
-            {
-                entries.erase(cacheQueue[0]);
-                cacheQueue.erase(cacheQueue.begin());
-            }
-        }
-
-        entries[key] = value;
+        cache[key] = { value, used.begin() };
     }
+    
+private:
+    typedef list<int> LI;
+    typedef pair<int, LI::iterator> PII;
+    typedef unordered_map<int, PII> HIPII;
+    
+    void touch(unordered_map<int, pair<int, list<int>::iterator>>::iterator it) {
+        int key = it->first;
+        used.erase(it->second.second);
+        used.push_front(key);
+        it->second.second = used.begin();
+    }
+    
+    unordered_map<int, pair<int, list<int>::iterator>> cache;
+    list<int> used;
+    int _capacity;
 };
