@@ -1,94 +1,66 @@
 //https://leetcode.com/problems/pacific-atlantic-water-flow/solutions/
-class Solution {
+cclass Solution {
 public:
+    
+    /// main logic or trick for this problem : bahar se andar ki taraf jao
     vector<vector<int>> pacificAtlantic(vector<vector<int>>& heights) {
-        //O(M*N)
+        //iterate over the 2d array from each side
+        //if an adjacent cell is higher than the current cell
+        //and hasn't been visited, recur and mark it as flowing
+        //to that ocean
+
+        vector<vector<int>>ans;
+        int m = heights.size();
+        int n = heights[0].size();
         
-        vector<vector<int>> result;
-
-        vector<vector<int>> canFlowToPacific(heights.size(), vector<int>(heights[0].size(), false) );
-        vector<vector<int>> canFlowToAtlantic(heights.size(), vector<int>(heights[0].size(), false) );
-
-        queue<tuple<int,int>> pacificFlowQueue;
-        queue<tuple<int,int>> atlanticFlowQueue;
-        vector<vector<int>> addedToqueue(heights.size(), vector<int>(heights[0].size(), false) );
-
-        for(int col = 0; col < heights.size(); col++)
-        {
-            tuple<int,int> coordinate = make_tuple(col,0);
-            canFlowToPacific[col][0] = true;
-            addedToqueue[col][0] = true;
-            pacificFlowQueue.push(coordinate);
-
-        }
-        for(int row = 1; row < heights[0].size(); row++)
-        {
-            tuple<int,int> coordinate = make_tuple(0,row);
-            canFlowToPacific[0][row] = true;
-            addedToqueue[0][row] = true;
-            pacificFlowQueue.push(coordinate);
+        vector<vector<bool>> pacific(m, vector<bool>(n));
+        vector<vector<bool>> atlantic(m, vector<bool>(n));
+        
+        for (int i = 0; i < m; i++) {
+            //check the top and bottom cells
+            dfs(heights, pacific, i, 0);
+            dfs(heights, atlantic, i, n-1);
         }
         
-        //iterate over matrix marking each coordinate that will flow to the atlantic using breadth first search
-        //if an adjacent flows to the atlantic and this is higher, mark that this one also flows to the pacific
-        while(pacificFlowQueue.size() > 0)
-        {
-            tuple<int,int> current = pacificFlowQueue.front(); pacificFlowQueue.pop();
-            int col = get<0>(current); int row = get<1>(current);
-            int currentHeight = heights[col][row];
-            AddBasedOnFlow(col-1, row, currentHeight, heights, addedToqueue, canFlowToPacific, pacificFlowQueue);
-            AddBasedOnFlow(col+1, row, currentHeight, heights, addedToqueue, canFlowToPacific, pacificFlowQueue);
-            AddBasedOnFlow(col, row-1, currentHeight, heights, addedToqueue, canFlowToPacific, pacificFlowQueue);
-            AddBasedOnFlow(col, row+1, currentHeight, heights, addedToqueue, canFlowToPacific, pacificFlowQueue);
+        for (int j = 0; j < n; j++) {
+            //check the left most and rightmost cells
+            dfs(heights, pacific, 0, j);
+            dfs(heights, atlantic, m-1, j);
         }
 
-        vector<vector<int>> addedToAtlanticQueue(heights.size(), vector<int>(heights[0].size(), false) );
-
-        for(int col = 0; col < heights.size(); col++)
-        {
-            tuple<int,int> coordinate = make_tuple(col,heights[0].size()-1);
-            canFlowToAtlantic[col][heights[0].size()-1] = true;
-            addedToAtlanticQueue[col][heights[0].size()-1] = true;
-            atlanticFlowQueue.push(coordinate);
-        }
-        for(int row = 0; row < heights[0].size()-1; row++)
-        {
-            tuple<int,int> coordinate = make_tuple(heights.size()-1,row);
-            canFlowToAtlantic[heights.size()-1][row] = true;
-            addedToAtlanticQueue[heights.size()-1][row] = true;
-            atlanticFlowQueue.push(coordinate);
-        }
-
-        while(atlanticFlowQueue.size() > 0)
-        {
-            tuple<int,int> current = atlanticFlowQueue.front(); atlanticFlowQueue.pop();
-            int col = get<0>(current); int row = get<1>(current);
-            int currentHeight = heights[col][row];
-            AddBasedOnFlow(col-1, row, currentHeight, heights, addedToAtlanticQueue, canFlowToAtlantic, atlanticFlowQueue);
-            AddBasedOnFlow(col+1, row, currentHeight, heights, addedToAtlanticQueue, canFlowToAtlantic, atlanticFlowQueue);
-            AddBasedOnFlow(col, row-1, currentHeight, heights, addedToAtlanticQueue, canFlowToAtlantic, atlanticFlowQueue);
-            AddBasedOnFlow(col, row+1, currentHeight, heights, addedToAtlanticQueue, canFlowToAtlantic, atlanticFlowQueue);
-            if(canFlowToPacific[col][row])
-            {
-                vector<int> newEntry = {col,row};
-                result.emplace_back(newEntry);
+        //find cells where both are true
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                
+                if (pacific[i][j] && atlantic[i][j]) // agar uss particular point se dono oceans mai jaa paa rahe hai
+                    ans.push_back({i,j});           // toh answer push kardo
             }
         }
-        //sort(result.begin(), result.end());
-        return result;
+        return ans;
     }
+    
+    void dfs(vector<vector<int>>& h, vector<vector<bool>>& vis, int i, int j) {
+        
+        int m = h.size();
+        int n = h[0].size();
 
-        void AddBasedOnFlow(int col, int row, int currentHeight, vector<vector<int>> heights, 
-        vector<vector<int>> &addedToqueue, vector<vector<int>>& canFlow, queue<tuple<int,int>>& flowQueue)
-    {
-        if(col >= 0 && row >= 0 && col < heights.size() && row < heights[0].size())
-        {
-            if(!addedToqueue[col][row] && currentHeight <= heights[col][row] )
-            {
-                addedToqueue[col][row] = true;
-                canFlow[col][row] = true;
-                flowQueue.push(make_tuple(col,row));
-            }
-        }
+        //mark that this cells flows to the ocean
+        vis[i][j] = true;
+
+        //check adjacent cells if they are 
+        // in domain, and not visted        and they're height is greater than this one's
+        //up
+        if (i-1 >= 0 && vis[i-1][j] != true && h[i-1][j] >= h[i][j])
+            dfs(h, vis, i-1, j);
+        //down
+        if (i+1 < m && vis[i+1][j] != true && h[i+1][j] >= h[i][j])
+            dfs(h, vis, i+1, j);
+        //left
+        if (j-1 >= 0 && vis[i][j-1] != true && h[i][j-1] >= h[i][j])
+            dfs(h, vis, i, j-1);
+        //right
+        if (j+1 < n && vis[i][j+1] != true && h[i][j+1] >= h[i][j])
+            dfs(h, vis, i, j+1);
+
     }
 };
